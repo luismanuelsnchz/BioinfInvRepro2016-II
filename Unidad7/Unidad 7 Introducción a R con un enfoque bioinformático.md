@@ -55,7 +55,7 @@ Como hemos visto en otras unidades, un **script** es un archivo de nuestros aná
 * un archivo de texto plano 
 * permanente,
 * repetible,
-* antoado,
+* anotado,
 * compartible y 
 * compatible con otras plataformas
 
@@ -152,6 +152,136 @@ Para una versión un poco más amplia del anterior resumen veamos estas [notas s
 * Crea una nueva df de datos sólo con las muestras de la raza Reventador, Jala y Ancho
 
 * Escribe la matriz anterior a un archivo llamado "submat.cvs" en /meta.
+
+### For loops
+
+Al igual que en bash, en R pueden hacerse for loops, con la siguiente sintaxis:
+
+`for (counter in vector) {commands}`
+
+Ejemplo:
+
+```{r}
+for (i in 2:10){
+  print(paste(i, "elefantes se columpiaban sobre la tela de una araña"))
+}
+
+```
+
+La anterior es la versión más simple de un loop. Para otras opciones (como `while`, `if`, `if else`, `next`) revisa este [tutorial](https://www.datacamp.com/community/tutorials/tutorial-on-loops-in-r).
+
+
+**Ejercicio** 
+
+* Escribe un for loop para que divida 35 entre 1:10 e imprima el resultado en la consola.
+
+* Modifica el loop anterior para que haga las divisiones solo para los números nones (con un comando, NO con `c(1,3,...)`). Pista: `next`.
+
+* Modifica el loop anterior para que los resultados de correr todo el loop se guarden en una df de dos columnas, la primera debe tener el texto "resultado para x" (donde x es cada uno de los elementos del loop) y la segunda el resultado correspondiente a cada elemento del loop. Pista: el primer paso es crear un vector *fuera* del loop. Ejemplo:
+
+```{r}
+elefantes<-character(0)
+for (i in 2:10){
+  elefantes<-rbind(elefantes, (paste(i, "elefantes se columpiaban sobre la tela de una araña")))
+}
+elefantes
+
+```
+
+**Ejercicio**  
+
+Observa el siguiente código:
+
+(para correr esto es necesario estar conectado a la red UNAM o tener una api key)
+
+```{r}
+# Required packages
+library(rscopus)
+library(httr)
+
+# Definir Apikey para poder acceder a scopus (la generé desde http://dev.elsevier.com/myapikey.html, se requiere entrar desde bidiunam)
+api_key<-"b3d334ef41f4096efa745ee88fcc55ca"
+
+
+# read indicadores list
+indicador<-read.delim(paste0(getwd(),"/../data/indicadores.txt"), header=FALSE, quote="", stringsAsFactors=FALSE)
+
+## RUN
+
+# build query
+
+query_string<-paste0('(TITLE-ABS-KEY(Maize)', ' AND TITLE-ABS-KEY(', pais, ') AND TITLE-ABS-KEY(', indicador[i,1],'))')
+      
+# run query
+# check out this for more filters than can be added to the query: http://api.elsevier.com/documentation/SCOPUSSearchAPI.wadl
+      
+s = generic_elsevier_api(query = query_string,
+        type = "search", search_type = "scopus",
+        api_key = api_key)
+      
+# extract number of resulted documents 
+      res<-s$content$`search-results`$`opensearch:totalResults`
+      
+```
+
+
+Con base en el código anterior, utiliza un loop para repetir la búsqueda para todos los indicadores del archivo `/data/indicadores.txt` (se encuentra en el repo de Practicas de la Uni7) y para tres países: México, Estados Unidos y Ecuador. Los resultados deben guardarse en un una df única y escribirse a un archivo que esté en una carpeta `out` que se llame `busquedaScopus.txt`. 
+
+Tu código para este ejercico debe estar guardado en un script llamado `Ejercicio_rscopusloop.R`.
+
+
+### Crear funciones y utilizarlas con `source`
+
+
+`source` es una función que sirve para correr un script de R **dentro** de otro script de R. Esto permite modularizar un análisis y luego correr una pipeline general, así como tener por separado **funciones propias** (que podemos llamar igual que llamamos las funciones de los paquetes) y que utilizamos mucho en diversos scripts. Este tipo de funciones son las que podemos compartir en Github con otros usuarios y hasta convertirlas en un paquete. 
+
+Ejemplos de cómo utilizar `source`: correr el script del ejercicio anterior desde otro script con la línea.
+
+```{r}
+source("Ejercicio_rscopusloop.R")
+```
+Nota que pare que esto funcione tu working directory debe ser el correcto para leer `Ejercicio_rscopusloop.R` como si fuera un archivo (que lo es).
+
+**Hacer una función propia**:
+
+Este es el [esqueleto de una función escrita dentro de R](http://www.statmethods.net/management/userfunctions.html):
+
+```{r}
+myfunction <- function(arg1, arg2, ... ){
+statements
+return(object)
+}
+```
+ 
+Ejemplo:
+
+```{r}
+give_i_line<- function(file, i){
+  ## Arguments 
+  # file = path to desired file with the indicadores, must be tab delimited and do NOT have a header
+  # number of line of file we want to print
+
+  ## Function
+  # read indicadores list
+  indicador<-read.delim(file, header=FALSE, quote="", stringsAsFactors=FALSE)
+
+  # give text of the i line of the file  
+  x<-indicador[i,1]
+  return(x)
+  } 
+
+```
+
+Si guardamos la función como un script llamado [`give_i_line.r`](../Practicas/Uni7/bin/give_i_line.r) después podemos correrlo desde otro script:
+
+```{r} 
+source("give_i_line.r")
+give_i_line("../data/indicadores.txt"), i=2)
+```
+
+Nota que `source` NO corre la función en sí, sino que solo la carga al cerebro de R para que podamos usarla como a una función cualquiera de un paquete.
+
+**Ejercicio:** Escribe una función que te permita leer un archivo de indicadores y realizar una búsqueda de todos los indicadores del archivo como en el ejercicio del script `Ejercicio_rscopusloop.R`. Uno de los argumentos de tu función debe ser "country" de manera que sea posible utilizar la función para correr la misma búsqueda con diferente país. El nombre de tu función debe ser `search_IndicadoresCountry`. Después en un script utiliza esa función para correr la búsqueda para dos países de tu elección, guarda los resultados en una df e imprímela en pantalla.
 
 
 
